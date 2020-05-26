@@ -1,0 +1,9 @@
+{
+  "paths": {
+    "deepIntel": "./"
+  },
+  "translations": [
+    "translations/zh-CN.json"
+  ]
+}
+
