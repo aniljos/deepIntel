@@ -25,6 +25,7 @@ export default function(kibana) {
     // eslint-disable-next-line no-unused-vars
     init(server, options) {
       const xpackMainPlugin = server.plugins.xpack_main;
+      
       if (xpackMainPlugin) {
         const featureId = 'deep_intel';
 

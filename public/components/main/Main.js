@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Link, HashRouter, Route, withRouter } from 'react-router-dom'
 import { TextSearch } from './TextSearch';
+import {TextSearchGrid} from './TextSearchGrid';
 import { EuiFlexGroup } from '@elastic/eui';
 import { EuiFlexItem } from '@elastic/eui';
 import { EuiTitle, EuiNavDrawer, EuiNavDrawerGroup } from '@elastic/eui';
@@ -17,10 +18,10 @@ const MainContent = withRouter((props) => {
         console.log(props);
         props.history.push("/");
     }
-    const handleTest = () => {
-        props.history.push("/tst");
+    const handleGridSearch = () => {
+        props.history.push("/grid");
     }
-    const handleCharts= () => {
+    const handleCharts = () => {
         props.history.push("/charts");
     }
 
@@ -35,17 +36,24 @@ const MainContent = withRouter((props) => {
                         size="s"
                         color="ghost" />
                     <EuiListGroupItem
+                        onClick={handleGridSearch}
+                        label="Grid"
+                        iconType="search"
+                        size="s"
+                        color="ghost" />
+                    <EuiListGroupItem
                         onClick={handleCharts}
                         label="Charts"
                         iconType="clock"
                         size="s"
                         color="primary" />
-                    
+
                 </EuiListGroup>
             </EuiFlexItem>
             <EuiFlexItem grow={9}>
-                <Route path="/" exact render={() => <TextSearch httpClient={props.httpClient}/>} />
-                <Route path="/charts" exact render={() => <Charts httpClient={props.httpClient}/>} />
+                <Route path="/" exact render={() => <TextSearch httpClient={props.httpClient} />} />
+                <Route path="/grid" exact render={() => <TextSearchGrid httpClient={props.httpClient} />} />
+                <Route path="/charts" exact render={() => <Charts httpClient={props.httpClient} />} />
             </EuiFlexItem>
         </EuiFlexGroup>
     );
@@ -78,7 +86,7 @@ export class Main extends Component {
                         </EuiFlexItem>
                         <EuiSpacer />
                         <EuiFlexItem>
-                            <MainContent {...this.props}/>
+                            <MainContent {...this.props} />
                         </EuiFlexItem>
                     </EuiFlexGroup>
                 </HashRouter>
@@ -87,4 +95,3 @@ export class Main extends Component {
     }
 
 }
-

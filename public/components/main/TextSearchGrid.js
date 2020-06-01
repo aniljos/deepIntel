@@ -23,7 +23,10 @@ import {
   EuiHighlight,
   EuiSwitch,
   EuiDatePicker,
-  EuiDatePickerRange
+  EuiDatePickerRange,
+  EuiCard,
+  EuiIcon,
+  EuiPanel
 
 } from '@elastic/eui';
 import { FormattedMessage } from '@kbn/i18n/react';
@@ -39,6 +42,10 @@ const fields = [
   },
   {
     label: "chat.username",
+    title: "Channel"
+  },
+  {
+    label: "chat.title",
     title: "Channel"
   },
   {
@@ -63,7 +70,7 @@ const fields = [
   }
 ]
 const refreshMessage = "Click Search to update the results";
-export class TextSearch extends React.Component {
+export class TextSearchGrid extends React.Component {
 
   state = {
     search: "",
@@ -71,10 +78,7 @@ export class TextSearch extends React.Component {
     data: [],
     size: "",
     noResultsMessage: "",
-    itemIdToExpandedRowMap: {},
-    selectedFields: [fields[0], fields[1]],
     refreshMessage: "",
-    displayAsExpandable: false,
     startDate: null,
     endDate: null
     //startDate: moment().subtract(1, '-d'),
@@ -91,19 +95,14 @@ export class TextSearch extends React.Component {
 
     this.elasticBaseUrl = "http://localhost:9200/deep-intel-2/"
 
-    const resp = await this.props.httpClient.post('../api/deep_intel/fetch', {fileName: "Video.mp4"})
-    console.log("response", resp);
+    // const resp = await this.props.httpClient.post('../api/deep_intel/fetch', {fileName: "Video.mp4"})
+    // console.log("response", resp);
 
-    const resp1 = await this.props.httpClient.post('../api/deep_intel/fetchPhoto', {fileName: "Video.mp4"})
-    console.log("response1", resp1);
+    // const resp1 = await this.props.httpClient.post('../api/deep_intel/fetchPhoto', {fileName: "Video.mp4"})
+    // console.log("response1", resp1);
   }
 
-  onFieldSelected = (selectedOptions) => {
-    this.setState({
-      selectedFields: selectedOptions,
-      refreshMessage: refreshMessage
-    });
-  }
+  
 
   onSearchChange = (evt) => {
     this.setState({
@@ -173,44 +172,16 @@ export class TextSearch extends React.Component {
         range.range.date.gte = this.state.startDate.format();
         range.range.date.lte = this.state.endDate.format();
         requestData.query.bool.must.push(range);
-        // requestData.query={
-
-        //     range: {
-        //       date: {
-        //         gte: this.state.startDate.format(),
-        //         lte: this.state.endDate.format()
-        //       }
-        //     }
-
-        // }
+        
       }
 
       if (this.state.search) {
 
         match.match.text.query = this.state.search;
         requestData.query.bool.must.push(match);
-        // requestData.query = {
-        //   match: {
-        //     text: {
-        //       query: this.state.search,
-        //       fuzziness: "AUTO" 
-        //     }
-        //   }
-        // }
+       
       }
-      if (this.state.selectedFields.length > 0) {
-        requestData["_source"] = this.state.selectedFields.map(item => item.label);
-
-        if(requestData["_source"].includes("media")){
-          console.log("Has Media")
-          requestData["_source"].push("document");
-          requestData["_source"].push("audio");
-          requestData["_source"].push("photo");
-          requestData["_source"].push("video");
-
-        }
-        
-      }
+      
 
       console.log(requestData);
       const resp = await httpClient.post(this.elasticBaseUrl + path, requestData);
@@ -226,162 +197,39 @@ export class TextSearch extends React.Component {
     })
   }
 
-  toggleDetails = item => {
-
-
-    const itemIdToExpandedRowMapValues = { ...this.state.itemIdToExpandedRowMap };
-    console.log(itemIdToExpandedRowMapValues);
-    if (itemIdToExpandedRowMapValues[item.id]) {
-      delete itemIdToExpandedRowMapValues[item.id];
-    } else {
-
-
-      const { text } = item;
-
-      const listItems = [
-        {
-          title: 'Message',
-          description: text ? text : "No Message",
-        }
-      ];
-      //console.log(listItems);
-      itemIdToExpandedRowMapValues[item.id] = (
-        <div>
-          <EuiTitle size="m">
-            <h2>Message</h2>
-          </EuiTitle>
-          <EuiSpacer size="m" />
-          <EuiHighlight search={this.state.search} highlightAll={true}>
-            {text ? text : "No Message"}
-          </EuiHighlight>
-        </div>
-      );
-    }
-    //setItemIdToExpandedRowMap(itemIdToExpandedRowMapValues);
-    this.setState({
-      itemIdToExpandedRowMap: itemIdToExpandedRowMapValues
-    }, () => {
-      console.log("State: ", this.state.itemIdToExpandedRowMap)
-    });
-  };
-
-  defineDataColumns = () => {
-
-    const columns = [];
-    const selectedFields = this.state.selectedFields.map(item => item);
-    //console.log(selectedFields);
-    // selectedFields.forEach(item => {
-
-
-    // });
-
-    for (const item of selectedFields) {
-      if (item.label === "text") {
-        if (!this.state.displayAsExpandable) {
-          columns.push({
-            field: item.label,
-            name: item.title,
-            sortable: false,
-            render: text => (
-              <EuiHighlight search={this.state.search} highlightAll={true}>
-                {text}
-              </EuiHighlight>
-            )
-          });
-        }
-      }
-      else {
-
-        if (item.label === "media") {
-          columns.push({
-            field: item.label,
-            name: item.title,
-            dataType: 'boolean',
-            sortable: true,
-            render: hasMedia => {
-              const color = hasMedia ? 'success' : 'danger';
-              const label = hasMedia ? 'YES' : 'NO';
-              return <EuiHealth color={color}>{label}</EuiHealth>;
-            },
-          });
-        }
-        else {
-          columns.push({
-            field: item.label,
-            name: item.title,
-            sortable: true
-          });
-        }
-
-      }
-    }
-
-    if (this.state.displayAsExpandable && selectedFields.findIndex(item => item.label === "text") != -1) {
-      columns.push({
-        align: RIGHT_ALIGNMENT,
-        width: '40px',
-        isExpander: true,
-        render: item => (
-          <EuiButtonIcon
-            onClick={() => this.toggleDetails(item)}
-            aria-label={this.state.itemIdToExpandedRowMap[item.id] ? 'Collapse' : 'Expand'}
-            iconType={this.state.itemIdToExpandedRowMap[item.id] ? 'arrowUp' : 'arrowDown'}
-          />
-        )
-      })
-    }
-    return columns;
-
-  }
-
-  checkIfTextIsSelected = () => {
-    const index = this.state.selectedFields.findIndex(item => item.label === "text");
-    //console.log("checkIfTextIsSelected", index);
-    return index !== -1
-  }
+  
 
   
+  
+
+
+  renderData = () => {
+
+    return this.state.data.map((item, index) => {
+      return (
+        <EuiFlexItem key={item.id}>
+          <EuiCard
+            layout="horizontal"
+            icon={<EuiIcon size="l" type={'email'} />}
+            title={item.chat && item.chat.title? item.chat.title : 'Message'}
+            description={<div><p>{'Date: ' + moment(item.date).format( 'DD-MM-YYYY HH:mm:ss')}</p> <p>User Name: {item.chat && item.chat.username ? item.chat.username: ""}</p> </div>}
+            children={<EuiPanel hasShadow={true} ><EuiHighlight search={this.state.search} highlightAll={true}>{item.text}</EuiHighlight></EuiPanel>}
+            onClick={() => window.alert('Card clicked')}
+            
+          />
+        </EuiFlexItem>
+      )
+    })
+
+
+  }
+
 
   render() {
     const { title } = this.props;
     const { search } = this.state;
     const { onSearchChange, onSearch } = this;
-
-
-
-    const dataColumns = this.defineDataColumns();
-    //console.log("dataColumns", dataColumns)
-
-    const filters = [];
-
-    if (this.state.selectedFields.findIndex(item => item.label === "media") !== -1) {
-      filters.push({
-        type: 'is',
-        field: 'media',
-        name: "HasMedia",
-        negatedName: "NoMedia"
-      })
-    }
-
-    if (this.state.selectedFields.findIndex(item => item.label === "text") !== -1) {
-      filters.push({
-        type: 'is',
-        field: 'text',
-        name: "HasText",
-        negatedName: "NoText"
-      })
-    }
-
-    const searchBox = {
-
-      box: {
-        incremental: false,
-        schema: true,
-      },
-      filters: filters,
-      //onChange: this.doSearch
-
-    };
+    
 
     return (
       <EuiPage>
@@ -449,23 +297,8 @@ export class TextSearch extends React.Component {
 
 
                 <EuiFlexItem>
-                  <EuiComboBox placeholder="Select Fields(Default: all)" fullWidth={true}
-                    options={fields} onChange={this.onFieldSelected} selectedOptions={this.state.selectedFields} />
-                </EuiFlexItem>
-                {this.checkIfTextIsSelected() ?
-                  <EuiFlexItem>
                     <EuiFieldSearch placeholder="Search for Text" compressed={true} value={search} fullWidth={true} onChange={onSearchChange} />
-                  </EuiFlexItem> : null}
-
-
-                {this.checkIfTextIsSelected() ? <EuiFlexItem>
-                  <EuiSwitch
-                    label="Display Text as expandable"
-                    checked={this.state.displayAsExpandable}
-                    onChange={e => { this.setState({ displayAsExpandable: e.target.checked, refreshMessage: refreshMessage }) }}
-                  />
-                </EuiFlexItem> : null}
-
+                  </EuiFlexItem>
 
                 <EuiFlexItem style={{ width: '200px' }}>
                   <EuiButton fill onClick={onSearch} size="s" >Search</EuiButton>
@@ -498,16 +331,11 @@ export class TextSearch extends React.Component {
                     </EuiTitle>
                   </EuiFlexItem>
                   <EuiFlexItem grow={9}>
-                    <EuiInMemoryTable
-                      items={this.state.data}
-                      itemID="id"
-                      columns={dataColumns}
-                      isExpandable={true}
-                      pagination={true}
-                      sorting={true}
-                      itemIdToExpandedRowMap={this.state.itemIdToExpandedRowMap}
-                      search={searchBox}
-                    />
+
+                    <EuiFlexGroup columns={3} direction="column" justifyContent="flexStart"  >
+                      {this.renderData()}
+                    </EuiFlexGroup>
+
                   </EuiFlexItem>
                 </EuiFlexGroup> : <EuiTitle size="s">
                   <h2>
