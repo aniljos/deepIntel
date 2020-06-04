@@ -26,7 +26,8 @@ import {
   EuiDatePickerRange,
   EuiCard,
   EuiIcon,
-  EuiPanel
+  EuiPanel,
+  EuiTextColor
 
 } from '@elastic/eui';
 import { FormattedMessage } from '@kbn/i18n/react';
@@ -34,6 +35,7 @@ import { uiModules } from 'ui/modules';
 import { EuiFieldText } from '@elastic/eui';
 import { RIGHT_ALIGNMENT } from '@elastic/eui/lib/services'
 import moment from 'moment';
+import axios from 'axios';
 
 const fields = [
   {
@@ -100,9 +102,13 @@ export class TextSearchGrid extends React.Component {
 
     // const resp1 = await this.props.httpClient.post('../api/deep_intel/fetchPhoto', {fileName: "Video.mp4"})
     // console.log("response1", resp1);
+
+    // const resp1 
+    //   = await this.props.httpClient.post('../api/deep_intel/fetchDocument', {fileName: "AngularJS.docx"})
+    //   console.log("response1", resp1);
   }
 
-  
+
 
   onSearchChange = (evt) => {
     this.setState({
@@ -172,16 +178,16 @@ export class TextSearchGrid extends React.Component {
         range.range.date.gte = this.state.startDate.format();
         range.range.date.lte = this.state.endDate.format();
         requestData.query.bool.must.push(range);
-        
+
       }
 
       if (this.state.search) {
 
         match.match.text.query = this.state.search;
         requestData.query.bool.must.push(match);
-       
+
       }
-      
+
 
       console.log(requestData);
       const resp = await httpClient.post(this.elasticBaseUrl + path, requestData);
@@ -197,10 +203,121 @@ export class TextSearchGrid extends React.Component {
     })
   }
 
-  
+  openDocument = async (item) => {
+    //const fileName = item.document.file_name;
+    const fileName = "AngularJS.docx";
 
-  
-  
+    const url = "../api/deep_intel/fetchDocument";
+    const data = { fileName };
+
+    // const resp1 
+    //   = await this.props.httpClient.post('../api/deep_intel/fetchDocument', data)
+    //   console.log("response1", resp1);
+
+
+    try {
+
+      const resp = await this.props.httpClient.post(url, data, { responseType: 'blob' });
+      const buffer = resp.data;
+      const mimeType = item.document.mime_type || 'application/octet-stream';
+      console.log("MimeType", mimeType);
+      var file = new Blob([buffer], { type: mimeType });
+      var fileURL = URL.createObjectURL(file);
+      window.open(fileURL);
+      $("#docViewer").attr('href', fileURL);
+    }
+    catch (err) {
+      console.log(err)
+    }
+
+
+  }
+
+  openVideo = async (item) => {
+    //const fileName = item.document.file_name;
+    const fileName = "Video1.mp4";
+
+    const url = "../api/deep_intel/fetchVideo";
+    const data = { fileName };
+    console.log("openVideo");
+    try {
+
+      const resp = await this.props.httpClient.post(url, data);
+      console.log(resp);
+    }
+    catch (err) {
+      console.log(err)
+    }
+
+
+  }
+
+  renderCard = (item) => {
+
+    if (item.text) {
+      return (
+        <EuiCard
+          layout="horizontal"
+          icon={<EuiIcon size="l" type={'email'} />}
+          title={item.chat && item.chat.title ? item.chat.title : 'Message'}
+          description={<div><p>{'Date: ' + moment(item.date).format('DD-MM-YYYY HH:mm:ss')}</p> <p>User Name: {item.chat && item.chat.username ? item.chat.username : ""}</p> </div>}
+          children={<EuiPanel hasShadow={true} ><EuiHighlight search={this.state.search} highlightAll={true}>{item.text}</EuiHighlight></EuiPanel>}
+          onClick={() => window.alert('Card clicked')} />
+      )
+    }
+    else {
+
+      let childPanel;
+      if (item.document) {
+        childPanel = (
+          <div>
+            <p>
+              <EuiTextColor color="secondary">Document: {item.document.file_name}</EuiTextColor>
+            </p>
+            <EuiSpacer />
+            <EuiButton fill onClick={() => { this.openDocument(item) }}>
+              Open
+            </EuiButton>
+          </div>
+        )
+      }
+      else if (item.audio) {
+        childPanel = (<div>Audio: {item.audio.file_name}</div>)
+      }
+      else if (item.video) {
+        childPanel = (
+          <div>
+            <p>
+              <EuiTextColor color="secondary">Video: {item.video.file_name}</EuiTextColor>
+            </p>
+            <EuiSpacer />
+            <EuiButton fill onClick={() => { this.openVideo(item) }}>
+              Open
+            </EuiButton>
+          </div>
+        )
+      }
+      else if (item.photo) {
+        childPanel = (<div>Photo: {item.caption}</div>)
+      }
+      else {
+        childPanel = (<div>Unknown</div>)
+      }
+
+
+      return (
+        <EuiCard
+          layout="horizontal"
+          icon={<EuiIcon size="l" type={'email'} />}
+          title={item.chat && item.chat.title ? item.chat.title : 'Message'}
+          description={<div><p>{'Date: ' + moment(item.date).format('DD-MM-YYYY HH:mm:ss')}</p> <p>User Name: {item.chat && item.chat.username ? item.chat.username : ""}</p> </div>}
+          children={<EuiPanel hasShadow={true} >{childPanel}</EuiPanel>} />)
+    }
+
+
+  }
+
+
 
 
   renderData = () => {
@@ -208,15 +325,7 @@ export class TextSearchGrid extends React.Component {
     return this.state.data.map((item, index) => {
       return (
         <EuiFlexItem key={item.id}>
-          <EuiCard
-            layout="horizontal"
-            icon={<EuiIcon size="l" type={'email'} />}
-            title={item.chat && item.chat.title? item.chat.title : 'Message'}
-            description={<div><p>{'Date: ' + moment(item.date).format( 'DD-MM-YYYY HH:mm:ss')}</p> <p>User Name: {item.chat && item.chat.username ? item.chat.username: ""}</p> </div>}
-            children={<EuiPanel hasShadow={true} ><EuiHighlight search={this.state.search} highlightAll={true}>{item.text}</EuiHighlight></EuiPanel>}
-            onClick={() => window.alert('Card clicked')}
-            
-          />
+          {this.renderCard(item)}
         </EuiFlexItem>
       )
     })
@@ -229,7 +338,7 @@ export class TextSearchGrid extends React.Component {
     const { title } = this.props;
     const { search } = this.state;
     const { onSearchChange, onSearch } = this;
-    
+
 
     return (
       <EuiPage>
@@ -250,6 +359,7 @@ export class TextSearchGrid extends React.Component {
 
               <EuiFlexGroup direction="column">
                 <EuiFlexItem style={{ width: '250px' }}>
+                  <img src="/kgd/plugins/deep-intel/assets/test.jpg"/>
                   <EuiFieldNumber placeholder="Record Size(Default is 10)"
                     value={this.state.size} onChange={evt => this.setState({ size: evt.target.value, refreshMessage: refreshMessage })} />
                 </EuiFlexItem>
@@ -297,8 +407,8 @@ export class TextSearchGrid extends React.Component {
 
 
                 <EuiFlexItem>
-                    <EuiFieldSearch placeholder="Search for Text" compressed={true} value={search} fullWidth={true} onChange={onSearchChange} />
-                  </EuiFlexItem>
+                  <EuiFieldSearch placeholder="Search for Text" compressed={true} value={search} fullWidth={true} onChange={onSearchChange} />
+                </EuiFlexItem>
 
                 <EuiFlexItem style={{ width: '200px' }}>
                   <EuiButton fill onClick={onSearch} size="s" >Search</EuiButton>

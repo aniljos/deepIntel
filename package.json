@@ -19,6 +19,8 @@
   },
   "dependencies": {
     "@kbn/i18n": "link:../../packages/kbn-i18n",
+    "axios": "^0.19.2",
+    "memorystream": "^0.3.1",
     "mongodb": "^3.5.7"
   },
   "devDependencies": {

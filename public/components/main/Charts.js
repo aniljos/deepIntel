@@ -7,12 +7,12 @@ class KibChart extends Component {
 
     async componentDidMount(){
 
-        const resp = await this.props.httpClient.get("../api/deep_intel/example")
-        console.log("KibChart", resp);
+        // const resp = await this.props.httpClient.get("../api/deep_intel/example")
+        // console.log("KibChart", resp);
 
-        const resp1 = await this.props.httpClient.post("../api/deep_intel/fetchMedia", {name: "abc.mp4"})
-        console.log("KibChart POST", resp1);
-        console.log(resp1);
+        // const resp1 = await this.props.httpClient.post("../api/deep_intel/fetchMedia", {name: "abc.mp4"})
+        // console.log("KibChart POST", resp1);
+        // console.log(resp1);
     }
 
     render() {

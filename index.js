@@ -2,10 +2,12 @@ import { i18n } from '@kbn/i18n';
 
 import exampleRoute from './server/routes/example';
 import fetchMedia from './server/routes/fetchMedia';
+import { resolve } from 'path'
 
 export default function(kibana) {
   return new kibana.Plugin({
     require: ['elasticsearch'],
+    publicDir: resolve(__dirname, 'public'),
     name: 'deep_intel',
     uiExports: {
       app: {
